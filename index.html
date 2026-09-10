@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myyqii</title>
+  <meta name="description" content="Myyqii — electronic music." />
+  <meta name="theme-color" content="#0a0a0b" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Artist</p>
+      <h1>Myyqii</h1>
+      <p class="tagline">Electronic music · Utrecht</p>
+    </header>
+
+    <section class="listen" aria-labelledby="listen-heading">
+      <div class="section-head">
+        <h2 id="listen-heading">Listen</h2>
+        <a class="text-link" href="https://soundcloud.com/myyqii" target="_blank" rel="noopener noreferrer">Open on SoundCloud</a>
+      </div>
+      <div class="player">
+        <iframe
+          title="Myyqii on SoundCloud"
+          width="100%"
+          height="300"
+          scrolling="no"
+          frameborder="no"
+          allow="autoplay"
+          src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/myyqii&color=%23c8ff3d&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true"
+        ></iframe>
+      </div>
+    </section>
+
+    <section class="contact" aria-labelledby="contact-heading">
+      <h2 id="contact-heading">Contact</h2>
+      <p>Booking, collabs, or just hello.</p>
+      <a class="button" href="mailto:hello@myyqii.com">hello@myyqii.com</a>
+    </section>
+
+    <footer>
+      <span>© <span id="year"></span> Myyqii</span>
+      <a href="https://soundcloud.com/myyqii" target="_blank" rel="noopener noreferrer">SoundCloud</a>
+    </footer>
+  </main>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
