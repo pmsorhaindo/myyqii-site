@@ -1,6 +1,6 @@
-# Myyqii
+# MyyQii
 
-Minimal one-page landing site for the artist brand **Myyqii** (canonical domain: `myyqii.com`).
+Minimal one-page landing site for the artist brand **MyyQii** (canonical domain: `myyqii.com`).
 
 ## Contents
 
