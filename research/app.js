@@ -1,6 +1,5 @@
 (() => {
   const API_BASE = "https://myyqii-research-api.myyqii.workers.dev";
-  const KEY_STORAGE = "myyqii-research-publish-key";
   const MAX_EDGE = 720;
   const JPEG_QUALITY = 0.72;
 
@@ -46,15 +45,7 @@
   }
 
   function getPublishKey() {
-    return (publishKeyInput.value || localStorage.getItem(KEY_STORAGE) || "").trim();
-  }
-
-  if (publishKeyInput) {
-    publishKeyInput.value = localStorage.getItem(KEY_STORAGE) || "";
-    publishKeyInput.addEventListener("change", () => {
-      localStorage.setItem(KEY_STORAGE, publishKeyInput.value.trim());
-      flash("Publish key saved on this device");
-    });
+    return (publishKeyInput.value || "").trim();
   }
 
   function uniqueSorted(values) {
