@@ -85,7 +85,7 @@
 
   function photoSrc(l) {
     if (l.photoUrl) {
-      return l.photoUrl.startsWith("http") ? l.photoUrl : ;
+      return l.photoUrl.startsWith("http") ? l.photoUrl : (API_BASE + l.photoUrl);
     }
     if (l.photo && String(l.photo).startsWith("data:")) return l.photo;
     return null;
@@ -109,7 +109,8 @@
       const img = new Image();
       img.onload = () => {
         URL.revokeObjectURL(url);
-        let { width, height } = img;
+        let width = img.width;
+        let height = img.height;
         const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
         width = Math.max(1, Math.round(width * scale));
         height = Math.max(1, Math.round(height * scale));
@@ -138,7 +139,7 @@
       pendingPhoto = await compressImage(file);
       setPhotoPreview(pendingPhoto.dataUrl);
       flash("Photo ready");
-    } catch {
+    } catch (e) {
       clearPhoto();
       flash("Could not use that image", false);
     }
@@ -146,10 +147,8 @@
   photoClear.addEventListener("click", clearPhoto);
 
   function render() {
-    const listens = [...data.listens].sort(
-      (a, b) =>
-        (b.at || "").localeCompare(a.at || "") ||
-        (b.createdAt || "").localeCompare(a.createdAt || "")
+    const listens = [...data.listens].sort((a, b) =>
+      (b.at || "").localeCompare(a.at || "") || (b.createdAt || "").localeCompare(a.createdAt || "")
     );
     listEl.innerHTML = "";
     emptyEl.classList.toggle("show", listens.length === 0);
@@ -174,7 +173,7 @@
       main.className = "listen-main";
       const title = document.createElement("p");
       title.className = "listen-title";
-      title.textContent = l.track ?  : l.artist;
+      title.textContent = l.track ? (l.artist + " — " + l.track) : l.artist;
       const meta = document.createElement("p");
       meta.className = "listen-meta";
       const bits = [l.at];
@@ -198,9 +197,9 @@
           flash("Publish key required to delete", false);
           return;
         }
-        const res = await fetch(, {
+        const res = await fetch(API_BASE + "/listens/" + encodeURIComponent(l.id), {
           method: "DELETE",
-          headers: { Authorization:  },
+          headers: { Authorization: "Bearer " + key },
         });
         if (!res.ok) {
           flash("Delete failed", false);
@@ -218,7 +217,7 @@
   }
 
   async function loadFromApi() {
-    const res = await fetch(, { cache: "no-store" });
+    const res = await fetch(API_BASE + "/listens", { cache: "no-store" });
     if (!res.ok) throw new Error("load failed");
     const parsed = await res.json();
     data = { version: 1, listens: Array.isArray(parsed.listens) ? parsed.listens : [] };
@@ -234,24 +233,26 @@
     const key = getPublishKey();
     if (!key) {
       flash("Add your publish key first", false);
-      publishKeyInput?.focus();
+      if (publishKeyInput) publishKeyInput.focus();
       return;
     }
     const payload = {
       at: fields.at.value || todayISO(),
-      artist,
+      artist: artist,
       track: clean(fields.track.value) || undefined,
       label: clean(fields.label.value) || undefined,
       note: clean(fields.note.value) || undefined,
       photo: pendingPhoto ? pendingPhoto.dataUrl : undefined,
     };
-    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined) delete payload[k];
+    });
 
     flash("Saving…");
-    const res = await fetch(, {
+    const res = await fetch(API_BASE + "/listens", {
       method: "POST",
       headers: {
-        Authorization: ,
+        Authorization: "Bearer " + key,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -284,14 +285,13 @@
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = ;
+    a.download = "myyqii-listens-" + todayISO() + ".json";
     a.click();
     URL.revokeObjectURL(a.href);
     flash("Exported");
   });
 
-  // Import becomes "bulk publish" only if key present — keep simple: disabled message
-  document.getElementById("import-file").addEventListener("change", async (e) => {
+  document.getElementById("import-file").addEventListener("change", (e) => {
     e.target.value = "";
     flash("Import to R2 coming later — use the form for now", false);
   });

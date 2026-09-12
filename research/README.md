@@ -1,20 +1,20 @@
 # MyyQii research — listen log
 
-Manual-first log for **intentional** electronic listening (DJ / produce).
+Manual-first log for intentional electronic listening (DJ / produce).
 
 ## Use
 
-1. Open 
+1. Open `/research/`
 2. Paste your **publish key** once (stored only in this browser)
 3. Log artist (+ optional track, label, note, photo)
-4. Entries + photos are stored in **Cloudflare R2** and visible to anyone on the page
+4. Entries + photos live in **Cloudflare R2** and are visible to anyone on the page
 
- saves. Photos are compressed in-browser before upload.
+`Cmd/Ctrl+Enter` saves. Photos are compressed in-browser before upload.
 
 ## Backend
 
-Worker:   
-Public: ,   
-Auth:  with 
+- Worker: `https://myyqii-research-api.myyqii.workers.dev`
+- Public: `GET /listens`, `GET /photos/:id`
+- Auth: `POST` / `DELETE` with `Authorization: Bearer <PUBLISH_SECRET>`
 
-Clubs/festivals are **not** on this form — separate outing entries later.
+Clubs/festivals are not on this form — separate outing entries later.
