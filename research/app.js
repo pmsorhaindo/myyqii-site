@@ -1,9 +1,17 @@
 (() => {
   const STORAGE_KEY = "myyqii-research-v1";
+  const MAX_EDGE = 720; // resize longest side
+  const JPEG_QUALITY = 0.72;
+
   const form = document.getElementById("listen-form");
   const listEl = document.getElementById("listen-list");
   const emptyEl = document.getElementById("empty");
   const statusEl = document.getElementById("form-status");
+  const photoInput = document.getElementById("photo");
+  const previewWrap = document.getElementById("photo-preview-wrap");
+  const previewImg = document.getElementById("photo-preview");
+  const photoClear = document.getElementById("photo-clear");
+
   const fields = {
     at: document.getElementById("at"),
     artist: document.getElementById("artist"),
@@ -11,6 +19,8 @@
     label: document.getElementById("label"),
     note: document.getElementById("note"),
   };
+
+  let pendingPhoto = null; // { dataUrl, mime }
 
   function todayISO() {
     const d = new Date();
@@ -31,7 +41,14 @@
   }
 
   function save(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch (err) {
+      console.error(err);
+      flash("Storage full — export, remove some photos, or delete old listens", false);
+      return false;
+    }
   }
 
   function clean(s) {
@@ -39,7 +56,9 @@
   }
 
   function uid() {
-    return crypto.randomUUID ? crypto.randomUUID() : `l_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    return crypto.randomUUID
+      ? crypto.randomUUID()
+      : `l_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function uniqueSorted(values) {
@@ -68,12 +87,90 @@
     fillDatalist("label-list", uniqueSorted(data.listens.map((l) => l.label)));
   }
 
+  function clearPhoto() {
+    pendingPhoto = null;
+    photoInput.value = "";
+    previewImg.removeAttribute("src");
+    previewWrap.classList.add("hidden");
+  }
+
+  function setPhotoPreview(dataUrl) {
+    previewImg.src = dataUrl;
+    previewWrap.classList.remove("hidden");
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+        resolve({ dataUrl, mime: "image/jpeg" });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read image"));
+      };
+      img.src = url;
+    });
+  }
+
+  photoInput.addEventListener("change", async () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) {
+      clearPhoto();
+      return;
+    }
+    try {
+      flash("Compressing…");
+      pendingPhoto = await compressImage(file);
+      setPhotoPreview(pendingPhoto.dataUrl);
+      flash("Photo ready");
+    } catch {
+      clearPhoto();
+      flash("Could not use that image", false);
+    }
+  });
+
+  photoClear.addEventListener("click", () => {
+    clearPhoto();
+  });
+
   function render(data) {
-    const listens = [...data.listens].sort((a, b) => (b.at || "").localeCompare(a.at || "") || (b.createdAt || "").localeCompare(a.createdAt || ""));
+    const listens = [...data.listens].sort(
+      (a, b) =>
+        (b.at || "").localeCompare(a.at || "") ||
+        (b.createdAt || "").localeCompare(a.createdAt || "")
+    );
     listEl.innerHTML = "";
     emptyEl.classList.toggle("show", listens.length === 0);
     for (const l of listens) {
       const li = document.createElement("li");
+
+      if (l.photo) {
+        const thumb = document.createElement("img");
+        thumb.className = "listen-thumb";
+        thumb.src = l.photo;
+        thumb.alt = "";
+        li.append(thumb);
+      } else {
+        const ph = document.createElement("div");
+        ph.className = "listen-thumb placeholder";
+        ph.textContent = "—";
+        ph.setAttribute("aria-hidden", "true");
+        li.append(ph);
+      }
+
       const main = document.createElement("div");
       main.className = "listen-main";
       const title = document.createElement("p");
@@ -91,6 +188,7 @@
         note.textContent = l.note;
         main.append(note);
       }
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "del";
@@ -98,10 +196,11 @@
       del.textContent = "Delete";
       del.addEventListener("click", () => {
         data.listens = data.listens.filter((x) => x.id !== l.id);
-        save(data);
+        if (!save(data)) return;
         refreshSuggest(data);
         render(data);
       });
+
       li.append(main, del);
       listEl.append(li);
     }
@@ -137,17 +236,21 @@
       track: clean(fields.track.value) || undefined,
       label: clean(fields.label.value) || undefined,
       note: clean(fields.note.value) || undefined,
+      photo: pendingPhoto ? pendingPhoto.dataUrl : undefined,
       source: "manual",
       createdAt: new Date().toISOString(),
     };
     Object.keys(entry).forEach((k) => entry[k] === undefined && delete entry[k]);
     data.listens.push(entry);
-    save(data);
+    if (!save(data)) {
+      data.listens.pop();
+      return;
+    }
     refreshSuggest(data);
     render(data);
     fields.track.value = "";
     fields.note.value = "";
-    // Keep date/artist/label for rapid related entries; jump to track
+    clearPhoto();
     fields.track.focus();
     flash("Saved");
   });
@@ -178,7 +281,7 @@
       const listens = Array.isArray(parsed) ? parsed : parsed.listens;
       if (!Array.isArray(listens)) throw new Error("bad shape");
       data = { version: 1, listens };
-      save(data);
+      if (!save(data)) return;
       refreshSuggest(data);
       render(data);
       flash("Imported");

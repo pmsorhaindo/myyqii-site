@@ -49,6 +49,16 @@
           <input id="label" name="label" list="label-list" placeholder="Optional" />
           <datalist id="label-list"></datalist>
         </label>
+        <div class="photo-row">
+          <label class="field photo-field">
+            <span>Photo</span>
+            <input id="photo" name="photo" type="file" accept="image/*" capture="environment" />
+          </label>
+          <div id="photo-preview-wrap" class="photo-preview-wrap hidden">
+            <img id="photo-preview" alt="Selected photo preview" />
+            <button type="button" id="photo-clear" class="ghost small">Remove</button>
+          </div>
+        </div>
         <label class="field">
           <span>Note</span>
           <input id="note" name="note" maxlength="200" placeholder="Why it matters — sound design, play-out, etc." />

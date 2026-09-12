@@ -5,11 +5,13 @@ Manual-first log for **intentional** electronic listening (DJ / produce), not ca
 ## Use
 
 1. Open `/research/` on the site
-2. Log artist (+ optional track, label, note)
+2. Log artist (+ optional track, label, note, photo)
 3. Data stays in **browser localStorage** on that device
 4. **Export JSON** to back up or move devices; **Import** to restore
 
-`⌘/Ctrl+Enter` saves. After save, track + note clear so you can keep logging in the same session.
+`⌘/Ctrl+Enter` saves. After save, track + note + photo clear so you can keep logging in the same session.
+
+Optional **photo** is resized/compressed in-browser (JPEG) before saving, so localStorage stays usable. If storage fills up, export then delete older photo-heavy entries.
 
 ## Data shape
 
