@@ -1,0 +1,10 @@
+name = "myyqii-research-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Bound after bucket create: wrangler r2 bucket create myyqii-research
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "myyqii-research"
+
+# PUBLISH_SECRET set via: wrangler secret put PUBLISH_SECRET
