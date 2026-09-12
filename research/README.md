@@ -5,7 +5,7 @@ Manual-first log for **intentional** electronic listening (DJ / produce), not ca
 ## Use
 
 1. Open `/research/` on the site
-2. Log artist (+ optional track, label, club, festival, note)
+2. Log artist (+ optional track, label, note)
 3. Data stays in **browser localStorage** on that device
 4. **Export JSON** to back up or move devices; **Import** to restore
 
@@ -14,5 +14,7 @@ Manual-first log for **intentional** electronic listening (DJ / produce), not ca
 ## Data shape
 
 See `../data/listens.example.json`.
+
+Clubs and festivals are **not** on this form — log those later as separate outing entries when you go out.
 
 Graph view comes later — this slice is fast data entry only.

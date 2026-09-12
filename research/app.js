@@ -9,8 +9,6 @@
     artist: document.getElementById("artist"),
     track: document.getElementById("track"),
     label: document.getElementById("label"),
-    club: document.getElementById("club"),
-    festival: document.getElementById("festival"),
     note: document.getElementById("note"),
   };
 
@@ -68,8 +66,6 @@
   function refreshSuggest(data) {
     fillDatalist("artist-list", uniqueSorted(data.listens.map((l) => l.artist)));
     fillDatalist("label-list", uniqueSorted(data.listens.map((l) => l.label)));
-    fillDatalist("club-list", uniqueSorted(data.listens.map((l) => l.club)));
-    fillDatalist("festival-list", uniqueSorted(data.listens.map((l) => l.festival)));
   }
 
   function render(data) {
@@ -87,8 +83,6 @@
       meta.className = "listen-meta";
       const bits = [l.at];
       if (l.label) bits.push(l.label);
-      if (l.club) bits.push(l.club);
-      if (l.festival) bits.push(l.festival);
       meta.textContent = bits.join(" · ");
       main.append(title, meta);
       if (l.note) {
@@ -142,8 +136,6 @@
       artist,
       track: clean(fields.track.value) || undefined,
       label: clean(fields.label.value) || undefined,
-      club: clean(fields.club.value) || undefined,
-      festival: clean(fields.festival.value) || undefined,
       note: clean(fields.note.value) || undefined,
       source: "manual",
       createdAt: new Date().toISOString(),
@@ -155,7 +147,7 @@
     render(data);
     fields.track.value = "";
     fields.note.value = "";
-    // Keep date/artist/label/club/festival for rapid related entries; jump to track
+    // Keep date/artist/label for rapid related entries; jump to track
     fields.track.focus();
     flash("Saved");
   });
