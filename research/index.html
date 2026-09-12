@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research · MyyQii</title>
+  <meta name="description" content="MyyQii research — intentional electronic listens for DJ / produce." />
+  <meta name="theme-color" content="#0a0a0b" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="research.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="top">
+      <a class="back" href="../">← MyyQii</a>
+      <div>
+        <p class="eyebrow">Research</p>
+        <h1>Listen log</h1>
+        <p class="lede">Active electronic digging only — DJ / produce lanes. Stored on this device; export anytime.</p>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="log-heading">
+      <div class="section-head">
+        <h2 id="log-heading">Log a listen</h2>
+        <p class="hint"><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> saves</p>
+      </div>
+      <form id="listen-form" autocomplete="off">
+        <div class="grid">
+          <label class="field">
+            <span>Date</span>
+            <input id="at" name="at" type="date" required />
+          </label>
+          <label class="field grow">
+            <span>Artist <em>*</em></span>
+            <input id="artist" name="artist" list="artist-list" required placeholder="e.g. Overmono" />
+            <datalist id="artist-list"></datalist>
+          </label>
+        </div>
+        <label class="field">
+          <span>Track / release</span>
+          <input id="track" name="track" placeholder="Optional" />
+        </label>
+        <div class="grid three">
+          <label class="field">
+            <span>Label</span>
+            <input id="label" name="label" list="label-list" placeholder="Optional" />
+            <datalist id="label-list"></datalist>
+          </label>
+          <label class="field">
+            <span>Club</span>
+            <input id="club" name="club" list="club-list" placeholder="Optional" />
+            <datalist id="club-list"></datalist>
+          </label>
+          <label class="field">
+            <span>Festival</span>
+            <input id="festival" name="festival" list="festival-list" placeholder="Optional" />
+            <datalist id="festival-list"></datalist>
+          </label>
+        </div>
+        <label class="field">
+          <span>Note</span>
+          <input id="note" name="note" maxlength="200" placeholder="Why it matters — sound design, play-out, etc." />
+        </label>
+        <div class="actions">
+          <button type="submit" class="button">Save listen</button>
+          <p id="form-status" class="status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="recent-heading">
+      <div class="section-head">
+        <h2 id="recent-heading">Recent</h2>
+        <div class="tools">
+          <button type="button" id="export-btn" class="ghost">Export JSON</button>
+          <label class="ghost file">
+            Import
+            <input id="import-file" type="file" accept="application/json,.json" hidden />
+          </label>
+        </div>
+      </div>
+      <ul id="listen-list" class="listen-list"></ul>
+      <p id="empty" class="empty">No listens yet — log the first one above.</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
