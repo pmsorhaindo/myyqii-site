@@ -1,6 +1,7 @@
 (() => {
-  const STORAGE_KEY = "myyqii-research-v1";
-  const MAX_EDGE = 720; // resize longest side
+  const API_BASE = "https://myyqii-research-api.myyqii.workers.dev";
+  const KEY_STORAGE = "myyqii-research-publish-key";
+  const MAX_EDGE = 720;
   const JPEG_QUALITY = 0.72;
 
   const form = document.getElementById("listen-form");
@@ -11,6 +12,7 @@
   const previewWrap = document.getElementById("photo-preview-wrap");
   const previewImg = document.getElementById("photo-preview");
   const photoClear = document.getElementById("photo-clear");
+  const publishKeyInput = document.getElementById("publish-key");
 
   const fields = {
     at: document.getElementById("at"),
@@ -20,7 +22,8 @@
     note: document.getElementById("note"),
   };
 
-  let pendingPhoto = null; // { dataUrl, mime }
+  let pendingPhoto = null;
+  let data = { version: 1, listens: [] };
 
   function todayISO() {
     const d = new Date();
@@ -28,37 +31,30 @@
     return new Date(d - tz).toISOString().slice(0, 10);
   }
 
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { version: 1, listens: [] };
-      const data = JSON.parse(raw);
-      if (!data || !Array.isArray(data.listens)) return { version: 1, listens: [] };
-      return { version: 1, listens: data.listens };
-    } catch {
-      return { version: 1, listens: [] };
-    }
-  }
-
-  function save(data) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      return true;
-    } catch (err) {
-      console.error(err);
-      flash("Storage full — export, remove some photos, or delete old listens", false);
-      return false;
-    }
-  }
-
   function clean(s) {
     return (s || "").trim().replace(/\s+/g, " ");
   }
 
-  function uid() {
-    return crypto.randomUUID
-      ? crypto.randomUUID()
-      : `l_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  function flash(msg, ok = true) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("ok", ok);
+    clearTimeout(flash._t);
+    flash._t = setTimeout(() => {
+      statusEl.textContent = "";
+      statusEl.classList.remove("ok");
+    }, 2500);
+  }
+
+  function getPublishKey() {
+    return (publishKeyInput.value || localStorage.getItem(KEY_STORAGE) || "").trim();
+  }
+
+  if (publishKeyInput) {
+    publishKeyInput.value = localStorage.getItem(KEY_STORAGE) || "";
+    publishKeyInput.addEventListener("change", () => {
+      localStorage.setItem(KEY_STORAGE, publishKeyInput.value.trim());
+      flash("Publish key saved on this device");
+    });
   }
 
   function uniqueSorted(values) {
@@ -82,9 +78,17 @@
     }
   }
 
-  function refreshSuggest(data) {
+  function refreshSuggest() {
     fillDatalist("artist-list", uniqueSorted(data.listens.map((l) => l.artist)));
     fillDatalist("label-list", uniqueSorted(data.listens.map((l) => l.label)));
+  }
+
+  function photoSrc(l) {
+    if (l.photoUrl) {
+      return l.photoUrl.startsWith("http") ? l.photoUrl : ;
+    }
+    if (l.photo && String(l.photo).startsWith("data:")) return l.photo;
+    return null;
   }
 
   function clearPhoto() {
@@ -112,10 +116,8 @@
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-        resolve({ dataUrl, mime: "image/jpeg" });
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve({ dataUrl: canvas.toDataURL("image/jpeg", JPEG_QUALITY), mime: "image/jpeg" });
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
@@ -141,12 +143,9 @@
       flash("Could not use that image", false);
     }
   });
+  photoClear.addEventListener("click", clearPhoto);
 
-  photoClear.addEventListener("click", () => {
-    clearPhoto();
-  });
-
-  function render(data) {
+  function render() {
     const listens = [...data.listens].sort(
       (a, b) =>
         (b.at || "").localeCompare(a.at || "") ||
@@ -156,11 +155,11 @@
     emptyEl.classList.toggle("show", listens.length === 0);
     for (const l of listens) {
       const li = document.createElement("li");
-
-      if (l.photo) {
+      const src = photoSrc(l);
+      if (src) {
         const thumb = document.createElement("img");
         thumb.className = "listen-thumb";
-        thumb.src = l.photo;
+        thumb.src = src;
         thumb.alt = "";
         li.append(thumb);
       } else {
@@ -175,7 +174,7 @@
       main.className = "listen-main";
       const title = document.createElement("p");
       title.className = "listen-title";
-      title.textContent = l.track ? `${l.artist} — ${l.track}` : l.artist;
+      title.textContent = l.track ?  : l.artist;
       const meta = document.createElement("p");
       meta.className = "listen-meta";
       const bits = [l.at];
@@ -192,13 +191,25 @@
       const del = document.createElement("button");
       del.type = "button";
       del.className = "del";
-      del.setAttribute("aria-label", "Delete listen");
       del.textContent = "Delete";
-      del.addEventListener("click", () => {
+      del.addEventListener("click", async () => {
+        const key = getPublishKey();
+        if (!key) {
+          flash("Publish key required to delete", false);
+          return;
+        }
+        const res = await fetch(, {
+          method: "DELETE",
+          headers: { Authorization:  },
+        });
+        if (!res.ok) {
+          flash("Delete failed", false);
+          return;
+        }
         data.listens = data.listens.filter((x) => x.id !== l.id);
-        if (!save(data)) return;
-        refreshSuggest(data);
-        render(data);
+        refreshSuggest();
+        render();
+        flash("Deleted");
       });
 
       li.append(main, del);
@@ -206,53 +217,60 @@
     }
   }
 
-  function flash(msg, ok = true) {
-    statusEl.textContent = msg;
-    statusEl.classList.toggle("ok", ok);
-    clearTimeout(flash._t);
-    flash._t = setTimeout(() => {
-      statusEl.textContent = "";
-      statusEl.classList.remove("ok");
-    }, 2200);
+  async function loadFromApi() {
+    const res = await fetch(, { cache: "no-store" });
+    if (!res.ok) throw new Error("load failed");
+    const parsed = await res.json();
+    data = { version: 1, listens: Array.isArray(parsed.listens) ? parsed.listens : [] };
   }
 
-  let data = load();
-  fields.at.value = todayISO();
-  refreshSuggest(data);
-  render(data);
-  fields.artist.focus();
-
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const artist = clean(fields.artist.value);
     if (!artist) {
       fields.artist.focus();
       return;
     }
-    const entry = {
-      id: uid(),
+    const key = getPublishKey();
+    if (!key) {
+      flash("Add your publish key first", false);
+      publishKeyInput?.focus();
+      return;
+    }
+    const payload = {
       at: fields.at.value || todayISO(),
       artist,
       track: clean(fields.track.value) || undefined,
       label: clean(fields.label.value) || undefined,
       note: clean(fields.note.value) || undefined,
       photo: pendingPhoto ? pendingPhoto.dataUrl : undefined,
-      source: "manual",
-      createdAt: new Date().toISOString(),
     };
-    Object.keys(entry).forEach((k) => entry[k] === undefined && delete entry[k]);
-    data.listens.push(entry);
-    if (!save(data)) {
-      data.listens.pop();
+    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+
+    flash("Saving…");
+    const res = await fetch(, {
+      method: "POST",
+      headers: {
+        Authorization: ,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      flash(err.error === "unauthorized" ? "Bad publish key" : "Save failed", false);
       return;
     }
-    refreshSuggest(data);
-    render(data);
+    const body = await res.json();
+    if (body.listen) data.listens.push(body.listen);
+    else await loadFromApi();
+    refreshSuggest();
+    render();
     fields.track.value = "";
     fields.note.value = "";
     clearPhoto();
     fields.track.focus();
-    flash("Saved");
+    flash("Saved to R2");
   });
 
   form.addEventListener("keydown", (e) => {
@@ -266,27 +284,27 @@
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `myyqii-listens-${todayISO()}.json`;
+    a.download = ;
     a.click();
     URL.revokeObjectURL(a.href);
     flash("Exported");
   });
 
+  // Import becomes "bulk publish" only if key present — keep simple: disabled message
   document.getElementById("import-file").addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
     e.target.value = "";
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      const listens = Array.isArray(parsed) ? parsed : parsed.listens;
-      if (!Array.isArray(listens)) throw new Error("bad shape");
-      data = { version: 1, listens };
-      if (!save(data)) return;
-      refreshSuggest(data);
-      render(data);
-      flash("Imported");
-    } catch {
-      flash("Import failed — need { listens: [...] }", false);
-    }
+    flash("Import to R2 coming later — use the form for now", false);
   });
+
+  fields.at.value = todayISO();
+  loadFromApi()
+    .then(() => {
+      refreshSuggest();
+      render();
+      fields.artist.focus();
+    })
+    .catch(() => {
+      flash("Could not load shared listens", false);
+      emptyEl.classList.add("show");
+    });
 })();

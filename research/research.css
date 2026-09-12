@@ -264,3 +264,5 @@ input:focus {
 @media (max-width: 640px) {
   .photo-row { grid-template-columns: 1fr; align-items: start; }
 }
+
+.settings .field { margin-bottom: 0; }
