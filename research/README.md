@@ -5,7 +5,7 @@ Manual-first log for intentional electronic listening (DJ / produce).
 ## Use
 
 1. Open `/research/`
-2. Paste your **publish key** (needed to save/delete; not stored in the browser)
+2. Paste your **publish key** once (remembered in this browser only — not the listens)
 3. Log artist (+ optional track, label, note, photo)
 4. Entries + photos live in **Cloudflare R2** and are visible to anyone on the page
 
